@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#102b3f">
+  <title>Orders Desk | Infinity MarketPlace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="orders.css">
+  <script src="../js/theme.js"></script>
+  <script src="orders.js" defer></script>
+</head>
+<body class="admin-body desk-body">
+
+  <!-- Sign-in gate: shown until a staff member or administrator signs in -->
+  <section id="loginGate" class="login-gate" hidden>
+    <form id="deskLoginForm" class="login-card">
+      <span class="brand-mark" aria-hidden="true">∞</span>
+      <h1>Orders Desk</h1>
+      <p class="muted">Sign in to receive and manage orders</p>
+      <p class="form-error" id="gateError" hidden></p>
+      <label class="field"><span>Email</span><input type="email" name="email" required autocomplete="username"></label>
+      <label class="field"><span>Password</span><input type="password" name="password" required autocomplete="current-password"></label>
+      <button class="btn btn-dark btn-block" type="submit">Sign in</button>
+      <div class="gate-theme" data-theme-slot></div>
+    </form>
+  </section>
+
+  <div id="desk" class="desk" hidden>
+    <header class="desk-top">
+      <div class="desk-brand">
+        <a class="brand" href="../index.html" aria-label="Storefront">
+          <span class="brand-mark" aria-hidden="true">∞</span>
+          <span class="brand-name">Infinity<span>Orders Desk</span></span>
+        </a>
+      </div>
+      <div class="desk-live" id="liveStatus" role="status" aria-live="off">
+        <span class="live-dot" aria-hidden="true"></span><span id="liveText">Connecting…</span>
+      </div>
+      <div class="desk-tools">
+        <button class="btn btn-outline-dark btn-small" id="soundBtn" type="button" aria-pressed="true">🔔 Sound on</button>
+        <button class="btn btn-outline-dark btn-small" id="refreshBtn" type="button">↻ Refresh</button>
+        <a class="btn btn-outline-dark btn-small" href="index.html">Admin console</a>
+        <span data-theme-slot></span>
+        <button class="btn btn-dark btn-small" id="logoutBtn" type="button">Log out</button>
+      </div>
+    </header>
+
+    <main class="desk-main">
+      <section class="stat-strip" id="stats" aria-label="Order summary"></section>
+
+      <section class="desk-controls" aria-label="Filters">
+        <div class="seg" role="tablist" aria-label="View">
+          <button type="button" role="tab" id="tabBoard" aria-selected="true">Board</button>
+          <button type="button" role="tab" id="tabList" aria-selected="false">List</button>
+        </div>
+        <input id="fSearch" class="search-input" type="search" placeholder="Search reference, name or phone" aria-label="Search orders">
+        <select id="fPayment" class="filter-select" aria-label="Payment status">
+          <option value="">Any payment</option>
+          <option value="paid">Paid</option>
+          <option value="unpaid">Unpaid</option>
+        </select>
+        <select id="fMethod" class="filter-select" aria-label="Payment method">
+          <option value="">Any method</option>
+          <option value="paystack">Paid online</option>
+          <option value="cash_on_delivery">Cash on delivery</option>
+        </select>
+        <select id="fDate" class="filter-select" aria-label="Date">
+          <option value="">All dates</option>
+          <option value="today" selected>Today</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+        <select id="fStatus" class="filter-select" aria-label="Status (list view)" hidden>
+          <option value="">All statuses</option>
+          <option value="pending">Awaiting payment</option>
+          <option value="processing">Ready to process</option>
+          <option value="shipped">Shipped</option>
+          <option value="out_for_delivery">Out for delivery</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button class="btn btn-outline-dark btn-small" id="seenBtn" type="button" hidden>Mark all as seen</button>
+      </section>
+
+      <p class="form-error" id="deskError" hidden></p>
+      <section id="board" class="board" aria-label="Order board"></section>
+      <section id="list" class="list-view" hidden aria-label="Order list"></section>
+    </main>
+  </div>
+
+  <dialog id="orderDialog" class="modal drawer" aria-labelledby="orderDialogTitle"></dialog>
+  <div id="printArea" class="print-area" aria-hidden="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
