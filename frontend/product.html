@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Discover quality electronics, fashion, home essentials and more at Infinity MarketPlace.">
+  <meta name="theme-color" content="#102b3f">
+  <title>Product | Infinity MarketPlace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script src="js/theme.js"></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body data-page="product">
+  <div class="announcement-bar">
+    <p>Welcome to Infinity MarketPlace — discover more, shop smarter.</p>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-main">
+      <a class="brand" href="index.html" aria-label="Infinity MarketPlace home">
+        <span class="brand-mark" aria-hidden="true">∞</span>
+        <span class="brand-name">Infinity<span>MarketPlace</span></span>
+      </a>
+
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button"
+              aria-label="Open navigation menu" aria-expanded="false" aria-controls="primaryNav">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="primary-nav" id="primaryNav" aria-label="Main navigation">
+        <a class="nav-link active" href="index.html">Home</a>
+        <a class="nav-link" href="index.html#categories">Categories</a>
+        <a class="nav-link" href="index.html#products">Shop</a>
+        <a class="nav-link" href="index.html#why-us">Why us</a>
+      </nav>
+
+      <div class="header-actions">
+        <label class="header-search" for="siteSearch">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="siteSearch" type="search" placeholder="Search products..." autocomplete="off">
+        </label>
+        <a class="account-link" id="accountLink" href="login.html" aria-label="Sign in">Sign in</a>
+        <a class="cart-link" href="cart.html" aria-label="Shopping cart">
+          <span aria-hidden="true">🛒</span>
+          <span>Cart</span>
+          <span class="cart-count" id="cartCount" aria-live="polite">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="index.html">Home</a><span aria-hidden="true">/</span>
+      <span id="crumbCategory">Shop</span><span aria-hidden="true">/</span>
+      <span id="crumbName">Product</span>
+    </nav>
+    <section class="product-detail" id="productDetail">
+      <div class="loading-state">Loading product...</div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="contact">
+    <div class="container footer-main">
+      <div class="footer-brand">
+        <a class="brand brand-light" href="index.html">
+          <span class="brand-mark" aria-hidden="true">∞</span>
+          <span class="brand-name">Infinity<span>MarketPlace</span></span>
+        </a>
+        <p>Your everyday marketplace for discovering products across the categories you love.</p>
+      </div>
+      <div class="footer-column">
+        <h3>Explore</h3>
+        <a href="index.html#categories">Categories</a>
+        <a href="index.html#products">Featured products</a>
+        <a href="cart.html">Shopping cart</a>
+      </div>
+      <div class="footer-column">
+        <h3>Customer</h3>
+        <a href="login.html">My account</a>
+        <a href="orders.html">Order history</a>
+        <a href="index.html#contact">Customer support</a>
+      </div>
+      <div class="footer-column">
+        <h3>Information</h3>
+        <a href="index.html#why-us">About the marketplace</a>
+        <a href="index.html#contact">Contact</a>
+        <a href="policies.html">Terms &amp; conditions</a>
+        <a href="policies.html#privacy">Privacy policy</a>
+        <a href="policies.html#delivery">Delivery &amp; returns</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>© <span id="currentYear"></span> Infinity MarketPlace. All rights reserved.</p>
+        <p>Built for a simpler shopping experience.</p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

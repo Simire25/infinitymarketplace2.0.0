@@ -1,0 +1,42 @@
+# Render Blueprint: creates the web service and its persistent disk.
+# Deploy: Render dashboard -> New -> Blueprint -> select this repository.
+services:
+  - type: web
+    name: infinity-marketplace
+    runtime: python
+    plan: starter            # persistent disks need a paid plan
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --workers 1 --threads 8 --timeout 60 --bind 0.0.0.0:$PORT "backend.app:create_app()"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PAYSTACK_SECRET_KEY
+        sync: false          # enter your Paystack secret key in the dashboard
+      - key: APP_ENV
+        value: production    # turns on the live-shop safety checks (refuses to start with unsafe settings)
+      - key: PUBLIC_BASE_URL
+        sync: false          # your public address, e.g. https://shop.example.com (must start with https://)
+      - key: UNPAID_ORDER_MINUTES
+        value: "90"          # unpaid online orders are cancelled and their stock released after this long
+      # Optional email (receipts, new-order alerts, password reset). Leave these blank to run without email.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false          # e.g. "Infinity MarketPlace <orders@yourdomain.com>"
+      - key: STORE_ORDER_EMAIL
+        sync: false          # where "new order" alerts go
+      - key: DATABASE_PATH
+        value: /var/data/marketplace.db
+    disk:
+      name: marketplace-data
+      mountPath: /var/data
+      sizeGB: 1

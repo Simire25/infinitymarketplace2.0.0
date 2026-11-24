@@ -6,6 +6,8 @@ The Flask backend is in `backend/`. The storefront and admin console are static 
 
 ## 1. Run it locally
 
+> **Important:** open the shop through the Flask address below (`http://127.0.0.1:5000`), not through VS Code's Live Server or by double-clicking the HTML files. Those only show the pages. They have no backend, so sign-in, the cart and checkout fail (you would see "Request failed (405)").
+
 Requirements: Python 3.10 or newer.
 
 ```bash
@@ -39,11 +41,17 @@ Set these as environment variables. Never put real keys in the frontend files.
 
 | Variable | Purpose |
 |---|---|
-| `SECRET_KEY` | Signs login sessions. **Required in production**, use a long random value. |
-| `PAYSTACK_SECRET_KEY` | Paystack secret key (`sk_test_...` while testing, `sk_live_...` when live). Online payment is hidden until this is set. |
-| `PUBLIC_BASE_URL` | The public address of the site, e.g. `https://shop.example.com`. Used for Paystack callbacks. Not needed on Render (uses `RENDER_EXTERNAL_URL`). |
-| `DATABASE_PATH` | Optional. SQLite file location. Defaults to `instance/marketplace.db`. |
-| `SESSION_COOKIE_SECURE` | Set to `1` once the site runs on HTTPS. |
+| `APP_ENV` | Set to `production` on the live site. It turns on the safety checks: the app **refuses to start** without a proper `SECRET_KEY` and an `https://` public address, and it forces secure cookies. Leave it unset on your own computer. |
+| `SECRET_KEY` | Signs login sessions. **Required in production**, 32+ random characters. |
+| `PUBLIC_BASE_URL` | The public address, e.g. `https://shop.example.com`. Used for Paystack and email links. On Render it defaults to the service address; set it if you use your own domain. |
+| `PAYSTACK_SECRET_KEY` | `sk_test_...` while testing (no real money), `sk_live_...` to take real payments. Online payment is hidden until this is set. |
+| `DATABASE_PATH` | SQLite file location. Put it on a persistent disk in production. Defaults to `instance/marketplace.db`. |
+| `UNPAID_ORDER_MINUTES` | Unpaid online orders are cancelled and their stock released after this long. Default 90. |
+| `TRUSTED_PROXIES` | How many proxies sit in front of the app (Render: 1, the default). Needed so rate limits see each visitor's real address. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SSL`, `MAIL_FROM` | Optional email. See section 3b. |
+| `STORE_ORDER_EMAIL` | Optional. Where new-order alert emails go. |
+
+A ready-to-copy list is in `.env.example`. On your own Windows computer, set a value for the current terminal with `$env:SECRET_KEY = "..."` (PowerShell) before `flask run`.
 
 Store name, WhatsApp number, delivery fee and pay-on-delivery on/off are set in the admin console under **Settings & Permissions**. They do not need a restart.
 
@@ -57,7 +65,15 @@ Store name, WhatsApp number, delivery fee and pay-on-delivery on/off are set in 
 
 How payment confirmation works: the customer is sent to Paystack's hosted checkout. When they return, and when Paystack sends the webhook, the server asks Paystack directly whether the transaction succeeded and whether the amount matches the order total. The order is marked paid only if both checks pass. The browser's report of success is never trusted, and webhook requests without a valid `x-paystack-signature` are rejected.
 
+**Odd payments are never guessed at.** If a customer pays after an order was cancelled, pays twice, or Paystack reports a different amount, the money is **not** silently accepted: it appears as a red **Refunds due** alert on the Orders Desk and in Payments. Refund it in the Paystack dashboard (Transactions, find the reference, Refund), then click **Mark refunded** so it leaves the list. Unpaid online orders are cancelled automatically after `UNPAID_ORDER_MINUTES` (Paystack is asked one last time first, so a payment that was made is never cancelled). Cancelling an order that was already paid online also raises a refund alert.
+
 Flutterwave is not included in this version. The payment code is isolated in `backend/payments.py`, so a Flutterwave adapter can be added alongside it.
+
+## 3b. Email (optional but recommended)
+
+With email switched on, customers get an order receipt, you get a new-order alert at `STORE_ORDER_EMAIL`, and customers can reset a forgotten password themselves. Any provider with SMTP works (Brevo, Zoho Mail, Mailgun, SendGrid, or Gmail with an app password). Set `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` (and `SMTP_PORT`, default 587; use `SMTP_SSL=1` with port 465). Use an address on your own domain for `MAIL_FROM`, or receipts may land in spam.
+
+Without email the shop still works: the forgot-password page tells customers to contact you, and you reset their password from **Customers → Reset password** (it shows a temporary password once).
 
 ## 4. WhatsApp support
 
@@ -109,7 +125,7 @@ The project includes `render.yaml`, which Render reads to create the service and
 
 1. Push the project to a GitHub repository (the zip contents, with the folder as the repo root).
 2. In Render, choose **New → Blueprint** and select the repository.
-3. When prompted, enter `PAYSTACK_SECRET_KEY` (use `sk_test_...` first). `SECRET_KEY` is generated automatically.
+3. When prompted, enter `PAYSTACK_SECRET_KEY` (use `sk_test_...` first) and, optionally, the email settings. `SECRET_KEY` is generated automatically and `APP_ENV=production` is already set. If you use your own domain, also set `PUBLIC_BASE_URL` to it.
 4. Click **Apply**. Render builds the app and starts it with gunicorn.
 5. Create your admin account from the service's **Shell** tab:
 
@@ -124,7 +140,8 @@ Notes for Render:
 
 - **Data persistence:** the database is stored on a persistent disk at `/var/data`. Without a disk (for example on the free plan), all orders and products are lost on every restart or redeploy. The disk requires a paid plan.
 - **Single instance:** SQLite works best with one instance, so `render.yaml` runs one gunicorn worker with several threads and does not scale horizontally. Moving to Render's managed PostgreSQL would be needed to run multiple instances.
-- **Public URL:** Render provides `RENDER_EXTERNAL_URL` automatically, and the app uses it for Paystack callbacks.
+- **Public URL:** Render provides `RENDER_EXTERNAL_URL` automatically, and the app uses it for Paystack callbacks. Render also provides HTTPS.
+- **Backups:** the disk is one copy of your data. Download a backup regularly from **Settings & Permissions → Backup** (administrators only), and before any update.
 - **Free-plan sleep:** free web services spin down when idle, which slows the first request. It is one reason to use a paid plan for a live store.
 
 ## 7b. Deploying on another host
@@ -133,15 +150,16 @@ Notes for Render:
 2. Install the app, then run it with a production server:
 
    ```bash
-   export SECRET_KEY='replace-with-a-long-random-string'
+   export APP_ENV=production
+   export SECRET_KEY='replace-with-a-long-random-string-of-32-or-more-characters'
    export PAYSTACK_SECRET_KEY='sk_live_...'
-   export PUBLIC_BASE_URL='https://shop.example.com'   # optional on Render, which sets RENDER_EXTERNAL_URL
-   export SESSION_COOKIE_SECURE=1
-   gunicorn --workers 3 --bind 127.0.0.1:8000 "backend.app:create_app()"
+   export PUBLIC_BASE_URL='https://shop.example.com'
+   export DATABASE_PATH=/var/lib/marketplace/marketplace.db
+   gunicorn --workers 1 --threads 8 --timeout 60 --bind 127.0.0.1:8000 "backend.app:create_app()"
    ```
 
-3. Point Nginx at `127.0.0.1:8000`.
-4. Keep the database file on persistent storage and back it up regularly.
+3. Point Nginx at `127.0.0.1:8000` and pass the usual `X-Forwarded-For`, `X-Forwarded-Proto` and `Host` headers.
+4. Keep the database file on persistent storage and back it up regularly (`flask --app backend.app backup-db /path/backup.db` is safe to run while the shop is live, for example from a nightly cron job).
 5. Create the first admin with `flask --app backend.app create-admin` on the server.
 
 ## 8. Project structure
@@ -163,21 +181,46 @@ Infinity-MarketPlace/
 │   ├── css/            style.css (theme tokens + homepage), pages.css (customer pages)
 │   ├── js/app.js       Storefront logic: API client, cart, pages, WhatsApp button
 │   ├── js/theme.js     Light/dark mode switch (loaded on every page)
+│   ├── js/forgot.js    Forgot / reset password page
+│   ├── policies.html   Terms, delivery & returns, privacy (edit before launch)
 │   └── admin/          Admin console: index.html, admin.js, admin.css
 │                       Orders Desk: orders.html, orders.js, orders.css
 ├── requirements.txt
 └── README.md
 ```
 
-## 9. Notes and limitations
+## 9. Going live checklist
 
-- **Database:** SQLite is used, so setup is one command. For heavy traffic or several servers, move to MySQL or PostgreSQL. The queries use standard SQL, and the database layer is isolated in `backend/db.py`.
-- **Unpaid online orders hold stock.** If a customer starts a Paystack payment and never completes it, the order stays *Awaiting payment* and its stock stays reserved. Staff can cancel these from the Orders section. Automatic expiry is not included yet.
-- **Refunds are manual.** Cancelling an order that has already been paid online does not refund it. Refund in the Paystack dashboard. The same applies if a payment arrives for an order that was cancelled in the meantime: the order stays cancelled but is marked as paid, so check the Payments section and refund it.
-- **Login protection:** there is no rate limiting on login yet. Add it (for example with Flask-Limiter) before going live.
-- **Email notifications:** not included. Order confirmations go through WhatsApp links and the order page.
-- **Cart:** stored in the browser (local storage). It is checked against live prices and stock at checkout, so stale carts cannot change prices.
-- **Product photos** are linked from external URLs. Upload storage is not included.
+Work through this once, in order:
+
+1. **Deploy** with `APP_ENV=production`, a generated `SECRET_KEY`, HTTPS and a persistent disk (section 7). The app will refuse to start if something unsafe is missing, and the message says what.
+2. **Test with `sk_test_` first.** Place an online order with a Paystack test card, then a cash on delivery order, and receive and ship both on the Orders Desk.
+3. **Switch to live:** put your `sk_live_...` key in, and set the webhook in Paystack to `https://YOUR-DOMAIN/api/paystack/webhook`. Place one small real order and refund it from Paystack to prove the whole loop.
+4. **Create your admin account** (`flask --app backend.app create-admin`) with a strong password and remove any demo products (**Products**). Set the store name, WhatsApp number and delivery fee in **Settings**.
+5. **Read and edit `frontend/policies.html`.** The delivery times, 48-hour damage window, 7-day return window and refund timing are sensible defaults, not your business's real policy and not legal advice. Change them to what you actually do, ideally after a lawyer has looked at them.
+6. **Turn on email** (section 3b) so customers get receipts and can reset passwords.
+7. **Make a first backup** and put a reminder in your calendar to take one every week.
+8. **Check Refunds due** on the Orders Desk each day it shows red.
+
+## 9b. What protects the shop
+
+- Prices and stock are decided by the server only; the browser cannot change them.
+- A payment is accepted only after Paystack confirms the exact amount; webhooks must carry a valid signature; two simultaneous confirmations cannot both complete one payment.
+- Repeated wrong passwords are blocked for 15 minutes (per account and per address); sign-ups, checkouts and reset requests are rate limited. A stranger cannot lock a real customer out by guessing, because only failed attempts count.
+- Passwords are stored hashed; weak ones are refused; changing a password signs out every old session.
+- Browser protections are on: strict Content-Security-Policy, no framing, HTTPS-only cookies and HSTS in production, cross-site write requests refused, and no caching of order or admin pages.
+- Errors show customers a plain message and are logged for you; no technical details leak.
+
+## 9c. Notes and limitations
+
+- **Database:** SQLite (with write-ahead logging) handles a small to medium shop well on one server. For heavy traffic or several servers, move to PostgreSQL; the database layer is isolated in `backend/db.py`.
+- **Single worker:** rate limiting and the unpaid-order timer keep their state in memory, which is why the deployment runs one gunicorn worker with several threads. If you ever run more workers or servers, move that state to Redis first.
+- **Refunds are still done by you** in the Paystack dashboard. The shop tells you exactly who to refund and how much, and tracks that you did it, but does not move money itself.
+- **Payments:** Paystack only. Flutterwave is not included.
+- **Delivery fee** is one flat fee for all addresses.
+- **Cart:** stored in the browser. It is checked against live prices and stock at checkout.
+- **Product photos** are linked from external URLs. If an image site removes a photo, the product shows without one. Upload storage is not included.
+- **Not included:** discount codes, product reviews, customer-facing order cancellation, and two-factor login for staff.
 
 ## 10. Upgrading from the Episode 2 prototype
 
